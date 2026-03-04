@@ -6,31 +6,31 @@ pool:
 
 stages:
 
-# -----------------------------
+# -------------------
 # UAT Deployment
-# -----------------------------
+# -------------------
 - stage: UAT
-  displayName: Deploy UAT Environment
+  displayName: Deploy UAT
 
   jobs:
-  - job: Terraform_UAT
-    displayName: Terraform UAT Deployment
+  - job: Deploy_UAT
 
     steps:
 
     - checkout: self
 
-    - task: TerraformInstaller@1
+    - script: |
+        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get install -y terraform
+        terraform version
       displayName: Install Terraform
-      inputs:
-        terraformVersion: '1.6.0'
 
     - task: AzureCLI@2
-      displayName: Azure Login
       inputs:
         azureSubscription: 'azure-service-connection'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
+        scriptType: bash
+        scriptLocation: inlineScript
         inlineScript: |
           az account show
 
@@ -40,34 +40,34 @@ stages:
         terraform validate
         terraform plan
         terraform apply -auto-approve
-      displayName: Terraform Apply UAT
+      displayName: Deploy UAT
 
-# -----------------------------
+# -------------------
 # PROD Deployment
-# -----------------------------
+# -------------------
 - stage: PROD
-  displayName: Deploy PROD Environment
   dependsOn: UAT
+  displayName: Deploy PROD
 
   jobs:
-  - job: Terraform_PROD
-    displayName: Terraform PROD Deployment
+  - job: Deploy_PROD
 
     steps:
 
     - checkout: self
 
-    - task: TerraformInstaller@1
+    - script: |
+        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get install -y terraform
+        terraform version
       displayName: Install Terraform
-      inputs:
-        terraformVersion: '1.6.0'
 
     - task: AzureCLI@2
-      displayName: Azure Login
       inputs:
         azureSubscription: 'azure-service-connection'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
+        scriptType: bash
+        scriptLocation: inlineScript
         inlineScript: |
           az account show
 
@@ -77,4 +77,4 @@ stages:
         terraform validate
         terraform plan
         terraform apply -auto-approve
-      displayName: Terraform Apply PROD
+      displayName: Deploy PROD
