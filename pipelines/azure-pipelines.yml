@@ -1,0 +1,80 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+
+# -----------------------------
+# UAT Deployment
+# -----------------------------
+- stage: UAT
+  displayName: Deploy UAT Environment
+
+  jobs:
+  - job: Terraform_UAT
+    displayName: Terraform UAT Deployment
+
+    steps:
+
+    - checkout: self
+
+    - task: TerraformInstaller@1
+      displayName: Install Terraform
+      inputs:
+        terraformVersion: '1.6.0'
+
+    - task: AzureCLI@2
+      displayName: Azure Login
+      inputs:
+        azureSubscription: 'azure-service-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az account show
+
+    - script: |
+        cd env/uat
+        terraform init
+        terraform validate
+        terraform plan
+        terraform apply -auto-approve
+      displayName: Terraform Apply UAT
+
+# -----------------------------
+# PROD Deployment
+# -----------------------------
+- stage: PROD
+  displayName: Deploy PROD Environment
+  dependsOn: UAT
+
+  jobs:
+  - job: Terraform_PROD
+    displayName: Terraform PROD Deployment
+
+    steps:
+
+    - checkout: self
+
+    - task: TerraformInstaller@1
+      displayName: Install Terraform
+      inputs:
+        terraformVersion: '1.6.0'
+
+    - task: AzureCLI@2
+      displayName: Azure Login
+      inputs:
+        azureSubscription: 'azure-service-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az account show
+
+    - script: |
+        cd env/prod
+        terraform init
+        terraform validate
+        terraform plan
+        terraform apply -auto-approve
+      displayName: Terraform Apply PROD
